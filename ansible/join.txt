@@ -1,1 +1,0 @@
-kubeadm join 172.16.1.11:6443 --token fatbcw.3wsjw4ovzxo5bt56     --discovery-token-ca-cert-hash sha256:406bfb3bb013ee9943cea9b999e99392605d0a8e4d1480dd546adaae8cf2ddc0 

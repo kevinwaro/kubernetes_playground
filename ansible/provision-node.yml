@@ -1,5 +1,5 @@
 ---
-- name: Provision a kubernetes master node
+- name: Provision a kubernetes node
   hosts: "{{ target }}"
   become: yes
   tasks:
