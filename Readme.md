@@ -23,7 +23,7 @@ Once everything is provisionned, you can ssh to the master node and start playin
 
    ```
    vagrant ssh master
-   $ kubernetes get nodes
+   $ kubectl get nodes
    NAME     STATUS   ROLES    AGE     VERSION
    master   Ready    master   8m39s   v1.17.3
    node1    Ready    <none>   5m19s   v1.17.3

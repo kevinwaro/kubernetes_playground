@@ -3,7 +3,7 @@
 Vagrant.configure("2") do |config|
 
   config.vm.define "master" do |master|
-    master.vm.box = "debian/stretch64"
+    master.vm.box = "debian/buster64"
     master.vm.hostname = "master"
     master.vm.network "private_network", ip: "172.16.1.11"
     master.vm.provider "virtualbox" do |vb|
@@ -22,7 +22,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.define "node1" do |node1|
-    node1.vm.box = "debian/stretch64"
+    node1.vm.box = "debian/buster64"
     node1.vm.hostname = "node1"
     node1.vm.network "private_network", ip: "172.16.1.12"
     node1.vm.provider "virtualbox" do |vb|
@@ -40,7 +40,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.define "node2" do |node2|
-    node2.vm.box = "debian/stretch64"
+    node2.vm.box = "debian/buster64"
     node2.vm.hostname = "node2"
     node2.vm.network "private_network", ip: "172.16.1.13"
     node2.vm.provider "virtualbox" do |vb|
