@@ -15,6 +15,7 @@
             - wget
             - curl
             - apt-transport-https
+            - gnupg2
 
       - name: Add docker apt repository key
         apt_key:
@@ -69,17 +70,6 @@
             - kubeadm
             - kubectl
 
-      - name: Copy join command
-        copy:
-            src: "{{ join_file }}"
-            dest: "/tmp/{{ join_file }}"
-            mode: 0777
-
-      - name: Join k8s cluster
-        command: sh "{{ join_file }}"
-        args:
-            chdir: /tmp
-
       - name: Update kubeadm.conf file
         lineinfile:
             path: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
@@ -94,3 +84,16 @@
         service:
             name: kubelet
             state: restarted
+
+      - name: Copy join command
+        copy:
+            src: "{{ join_file }}"
+            dest: "/tmp/{{ join_file }}"
+            mode: 0777
+
+      - name: Join k8s cluster
+        command: sh "{{ join_file }}"
+        args:
+            chdir: /tmp
+
+
