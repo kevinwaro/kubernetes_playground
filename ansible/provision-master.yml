@@ -2,6 +2,7 @@
 - name: Provision a kubernetes master node
   hosts: "{{ target }}"
   become: yes
+  gather_facts: true
   tasks:
       - name: Update apt repository cache
         apt:
