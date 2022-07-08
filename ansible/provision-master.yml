@@ -72,6 +72,15 @@
             - kubeadm
             - kubectl
 
+      - name: Reset containerd settings
+        shell:
+            cmd: containerd config default > /etc/containerd/config.toml
+
+      - name: Restart containerd service
+        service:
+            name: containerd
+            state: restarted
+
       - name: Update k8s configuration
         lineinfile:
             name: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf

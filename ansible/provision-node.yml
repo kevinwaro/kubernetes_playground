@@ -70,6 +70,15 @@
             - kubeadm
             - kubectl
 
+      - name: Update containerd default configuration
+        shell:
+            cmd: containerd config default > /etc/containerd/config.toml
+
+      - name: Restart containerd service
+        service:
+            name: containerd
+            state: restarted
+
       - name: Update kubeadm.conf file
         lineinfile:
             path: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
