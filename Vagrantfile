@@ -18,6 +18,7 @@ Vagrant.configure("2") do |config|
             "target" => "master",
             "master_ip" => "172.16.1.11",
             "master_ip_subnet" => "172.16.1.0/24",
+            "weave_url" => "https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml",
             "join_file" => "join.txt"
         }
     end
