@@ -12,36 +12,60 @@
         apt:
             name: "{{ item }}"
             state: present
-        with_items:
+        loop:
             - wget
             - curl
             - apt-transport-https
             - gnupg2
             - software-properties-common
 
+      - name: Add required kernel modules
+        community.general.modprobe:
+           name: "{{ item }}"
+           state: present
+        loop:
+           - overlay
+           - br_netfilter
+
+      - name: Add required sysctl rules
+        ansible.posix.sysctl:
+           name: "{{ item.key }}"
+           value: "{{ item.value }}"
+           sysctl_file: /etc/sysctl.d/k8s.conf
+           reload: true
+        loop: "{{ sysctl | dict2items }}"
+        vars:
+          sysctl:
+            net.bridge.bridge-nf-call-ip6tables: 1
+            net.bridge.bridge-nf-call-iptables: 1
+            net.ipv4.ip_forward: 1
+ 
       - name: Add docker apt repository key
-        apt_key:
-            url: https://download.docker.com/linux/debian/gpg
-            state: present
+        get_url:
+           url: https://download.docker.com/linux/debian/gpg
+           dest: /etc/apt/keyrings/docker.asc
+           mode: 0644
+           owner: root
+           group: root
 
       - name: Add docker apt repository
         apt_repository:
-            repo: "deb https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
-            state: present
+           repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+           state: present
 
       - name: Install docker packages
         apt:
-            name: "{{ item }}"
-            state: present
+           name: "{{ item }}"
+           state: present
         with_items:
-            - docker-ce
-            - docker-ce-cli
-            - containerd.io
+           - docker-ce
+           - docker-ce-cli
+           - containerd.io
 
       - name: Add vagrant user to docker group
         user:
-            name: vagrant
-            group: docker
+           name: vagrant
+           group: docker
 
       - name: Disable swapp
         command: sed -i '/swap/d' /etc/fstab
@@ -50,13 +74,16 @@
         command: swapoff -a
 
       - name: Add k8s apt repository key
-        apt_key:
-            url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-            state: present
+        get_url:
+            url: https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key
+            dest: /etc/apt/keyrings/kubernetes-apt-keyring.asc
+            mode: 0644
+            owner: root
+            group: root
 
       - name: Add k8s apt repository
         apt_repository:
-            repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+            repo: deb [arch=am64 signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /
             state: present
 
       - name: Update apt repository cache
@@ -76,26 +103,28 @@
         shell:
             cmd: containerd config default > /etc/containerd/config.toml
 
+      - name: Update containerd configuration
+        ansible.builtin.lineinfile:
+            path: /etc/containerd/config.toml
+            regexp: '^(.*)SystemdCgroup'
+            line: '            SystemdCgroup = true'        
+
+      - name: Update containerd configuration
+        ansible.builtin.lineinfile:
+            path: /etc/containerd/config.toml
+            regexp: '^(.*)sandbox_image'
+            line: '    sandbox_image = "registry.k8s.io/pause:3.9"'   
+
       - name: Restart containerd service
         service:
             name: containerd
             state: restarted
 
-      - name: Update k8s configuration
-        lineinfile:
-            name: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-            insertafter: EOF
-            line: "Environment=\"KUBELET_EXTRA_ARGS=--node-ip={{ master_ip }}\""
-
-      - name: Restart kubelet service
-        service:
-            name: kubelet
-            daemon_reload: yes
-            state: restarted
-  
       - name: Start cluster
         command:
             cmd: "kubeadm init --apiserver-advertise-address={{ master_ip }} --pod-network-cidr={{ master_ip_subnet }}"
+#            cmd: "kubeadm init --pod-network-cidr={{ master_ip_subnet }}"
+
 
       - name: Create kube folder in user directory
         file:
@@ -112,10 +141,18 @@
             owner: vagrant
             group: vagrant
 
-      - name: Install weave pod networking
+      - name: Get cilium binary
+        unarchive:
+           src: https://github.com/cilium/cilium-cli/releases/download/v0.18.6/cilium-linux-amd64.tar.gz
+           dest: /usr/local/bin/
+           owner: vagrant
+           group: vagrant
+           mode: 0744
+           remote_src: true
+
+      - name: Run cilium
+        command: cilium install --version 1.18.1
         become: no
-        shell:
-            cmd: "kubectl apply -f {{ weave_url }}"
 
       - name: Generate join command
         command: kubeadm token create --print-join-command
